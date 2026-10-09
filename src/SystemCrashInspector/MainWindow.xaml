@@ -8,7 +8,7 @@
             <TextBlock Text="System Crash Inspector" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,10"/>
             <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
                 <TextBlock Text="Period:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="PeriodPicker" Width="150" SelectedIndex="4" Margin="0,0,12,0">
+                <ComboBox x:Name="PeriodPicker" Width="150" SelectedIndex="0" Margin="0,0,12,0">
                     <ComboBoxItem Content="Last 1 hour" Tag="1"/>
                     <ComboBoxItem Content="Last 12 hours" Tag="12"/>
                     <ComboBoxItem Content="Last 24 hours" Tag="24"/>
