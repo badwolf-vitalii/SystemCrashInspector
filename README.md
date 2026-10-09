@@ -1,57 +1,70 @@
 # SystemCrashInspector
 
-A Windows desktop app for investigating crashes, application hangs, and unexpected system restarts.
+A Windows desktop diagnostic tool for inspecting application crashes, unexpected restarts, BugChecks, and related event-log evidence.
 
-## Features
+## Interface
 
-- **Incidents tab (default):** groups unclean restarts and BugCheck reports, links nearby Windows dump files, and separates unrelated application crashes
-- **Raw events tab:** retains the original event viewer with XML and per-event explanations
+The application uses **WPF UI (Fluent design)** and a custom, dark diagnostic dashboard inspired by the project's social preview:
 
-- WPF interface targeting .NET 8 on Windows
-- Reads relevant events from **System** and **Application** event logs
-- Shows the event timestamp, ID, source, category, severity, and full description
-- Provides event-specific diagnostic explanations, raw event XML, and a +/- 5 minute timeline of other collected events
-- Looks for nearby Windows minidumps, MEMORY.DMP, and per-user crash dumps (file metadata only)
-- Includes selected WHEA, graphics-driver, storage, and .NET exception indicators
-- Filters to the last 1, 12, or 24 hours, or 7, 30, or 90 days
-- Exports the currently loaded events to CSV
-- Loads event data without blocking the UI
+- Sidebar navigation between **Incidents** and **Event log**
+- Summary cards for detected incidents, system restarts, and events scanned
+- Selectable incident cards with status, timestamp, and concise description
+- Structured incident analysis: **Overview**, **Event timeline**, **Minidumps**, and **Raw report**
+- File Explorer shortcut for located system dump files
+- Event log with provider/ID/message search and a dedicated detail/Raw XML pane
+- Period selector: 1 hour (default), 12 hours, 24 hours, 7 days, 30 days, or 90 days
+- CSV export of the loaded events and copyable incident reports
+- Fixed-height table rows and virtualized scrolling for long event lists
 
-## Events included
+The dark colors, typography, spacing, and diagnostic cards live in `src/SystemCrashInspector/Themes/DashboardTheme.xaml`.
 
-| Log | Event IDs | Meaning |
+## Diagnostics
+
+SystemCrashInspector reads selected event IDs in the **System** and **Application** event logs. It correlates nearby records such as **Kernel-Power 41**, **BugCheck 1001**, and **EventLog 6008** into a restart incident.
+
+Potential supporting clues include some WHEA, graphics-driver recovery, storage, and .NET Runtime events. Application crashes and hangs remain separate incidents.
+
+The application lists nearby Windows minidumps and `MEMORY.DMP` by filename, size, and last-modified time. **It does not parse dump contents, load debugging symbols, or identify the faulty driver.** For a BugCheck such as `VIDEO_TDR_FAILURE (0x116)`, the dashboard describes the stop code but does not infer a cause from the dump.
+
+### Event IDs collected
+
+| Log | IDs | Diagnostic use |
 | --- | --- | --- |
-| System | 4101 | Display driver timeout / recovery (provider-dependent) |\n| System | 17-20 | Hardware errors (only when emitted by WHEA providers) |\n| System | 7, 11, 15, 51, 55, 129, 153, 157 | Potential storage errors (source-dependent) |\n| Application | 1026 | .NET exception reporting (source-dependent) |\n| System | 41 | Kernel-Power: system restarted without a clean shutdown |
-| System | 6008 | Unexpected shutdown |
-| System | 1001 | Bug check |
-| System | 1074 | Planned restart/shutdown |
-| System | 6005, 6006 | Event Log service start/stop |
-| Application | 1000 | Application error |
-| Application | 1001 | Windows Error Reporting |
-| Application | 1002 | Application hang |
+| System | 41, 6008 | Unclean restart and unexpected shutdown |
+| System | 1001 | BugCheck reporting (provider must match) |
+| System | 4101 | Display-driver recovery (provider-dependent) |
+| System | 17–20 | Potential WHEA indicators (verify provider) |
+| System | 7, 11, 15, 51, 55, 129, 153, 157 | Potential storage issues (verify provider) |
+| System | 1, 14, 100, 219, 1074, 6005, 6006 | Additional context |
+| Application | 1000, 1001, 1002, 1026 | Application failures, reporting, and .NET Runtime events |
 
-Missing Windows event-provider message resources do not stop event loading; the app shows a fallback description. Unavailable logs are reported in the status bar while other logs are still processed.\n\nEvents provide evidence to investigate; **they do not establish the root cause by themselves**. The reader currently caps results at 2,000 events.
+Events are **indicators, not proof of root cause**. Correlation is based on time proximity and event sources. The reader is currently capped at 2,000 events, and the timeline does not include every possible Windows event. Missing event-provider message resources or inaccessible logs may produce warnings without losing other readable logs.
 
 ## Requirements
 
-- Windows 10 or 11
-- .NET 8 SDK to build and .NET 8 Desktop Runtime to run
-- Access to Windows Event Logs (administrator rights may be needed for some systems)
+- Windows 10 or Windows 11
+- .NET 8 Desktop Runtime to run
+- Visual Studio 2022 with the **.NET desktop development** workload, or .NET 8 SDK, to build
+- Access to the Windows Event Logs; certain protected records may require elevated rights
 
 ## Build
 
+Open `src/SystemCrashInspector.sln` in Visual Studio 2022, or run:
+
 ```powershell
-dotnet restore src/SystemCrashInspector/SystemCrashInspector.csproj
-dotnet build src/SystemCrashInspector/SystemCrashInspector.csproj -c Release
+dotnet restore src/SystemCrashInspector.sln
+dotnet build src/SystemCrashInspector.sln --configuration Release
 dotnet run --project src/SystemCrashInspector/SystemCrashInspector.csproj
 ```
 
-Open `src/SystemCrashInspector.sln` in Visual Studio 2022 with the .NET desktop development workload.
+The project references **WPF-UI 4.3.0** (Fluent controls and theme resources) and `System.Diagnostics.EventLog`.
 
 ## Privacy
 
-Events are read locally. Nothing is transmitted to external services. CSV exports can contain paths, usernames, and other sensitive event details, so review them before sharing.
+The application reads local event logs and checks local crash dump paths. It does not transmit diagnostic information to external services. CSV exports and copied reports may include user names, file paths, device identifiers, and other sensitive event content.
 
-## Scope
+## Limitations and future work
 
-Incident correlation uses time proximity and provider names, not proof of causation. Windows dump files are listed by metadata only, not symbolically analyzed.\n\nThis stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. Dump metadata is listed, but dump contents are not analyzed. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.
+- Automatic WinDbg-based dump and driver analysis is **not** implemented.
+- WER report ingestion and advanced hardware data collection are **not** implemented.
+- The preview-inspired dashboard presents only diagnostic information the current analyzer can support. It does not claim to identify faulty hardware automatically.
