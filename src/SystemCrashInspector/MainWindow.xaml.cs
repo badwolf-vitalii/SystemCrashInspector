@@ -39,15 +39,17 @@ public partial class MainWindow : Window
             var days = int.Parse(((ComboBoxItem)PeriodPicker.SelectedItem).Tag.ToString()!,
                 CultureInfo.InvariantCulture);
             var since = DateTime.Now.AddDays(-days);
-            var events = await Task.Run(() => _reader.Read(since, cancellation.Token), cancellation.Token);
+            var result = await Task.Run(() => _reader.Read(since, cancellation.Token), cancellation.Token);
             if (cancellation.IsCancellationRequested)
                 return;
 
             _events.Clear();
-            foreach (var item in events)
+            foreach (var item in result.Events)
                 _events.Add(item);
 
-            StatusText.Text = $"Loaded {events.Count} events. Event IDs are indicators, not proof of root cause.";
+            StatusText.Text = $"Loaded {result.Events.Count} events." +
+                (result.Warnings.Count > 0 ? $" Warnings: {string.Join(" | ", result.Warnings)}" :
+                " Event IDs are indicators, not proof of root cause.");
         }
         catch (OperationCanceledException)
         {

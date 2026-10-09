@@ -24,7 +24,7 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 | Application | 1001 | Windows Error Reporting |
 | Application | 1002 | Application hang |
 
-Events provide evidence to investigate; **they do not establish the root cause by themselves**. The reader currently caps results at 2,000 events.
+Missing Windows event-provider message resources do not stop event loading; the app shows a fallback description. Unavailable logs are reported in the status bar while other logs are still processed.\n\nEvents provide evidence to investigate; **they do not establish the root cause by themselves**. The reader currently caps results at 2,000 events.
 
 ## Requirements
 

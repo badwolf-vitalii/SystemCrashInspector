@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using System.Diagnostics.Eventing.Reader;
 using SystemCrashInspector.Models;
 
 namespace SystemCrashInspector.Services;
+
+public sealed record CrashEventReadResult(IReadOnlyList<CrashEvent> Events, IReadOnlyList<string> Warnings);
 
 public sealed class CrashEventReader
 {
@@ -13,57 +16,68 @@ public sealed class CrashEventReader
         ("Application", [1000, 1001, 1002])
     ];
 
-    public IReadOnlyList<CrashEvent> Read(DateTime since, CancellationToken cancellationToken)
+    public CrashEventReadResult Read(DateTime since, CancellationToken cancellationToken)
     {
         var events = new List<CrashEvent>();
+        var warnings = new List<string>();
 
         foreach (var (log, ids) in Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var idsQuery = string.Join(" or ", ids.Select(id => $"EventID={id}"));
-            var query = new EventLogQuery(log, PathType.LogName,
-                $"*[System[({idsQuery})]]")
+            try
             {
-                ReverseDirection = true
-            };
+                var idsQuery = string.Join(" or ", ids.Select(id => $"EventID={id}"));
+                var query = new EventLogQuery(log, PathType.LogName,
+                    $"*[System[({idsQuery})]]")
+                {
+                    ReverseDirection = true,
+                    TolerateQueryErrors = true
+                };
 
-            using var reader = new EventLogReader(query);
-            while (events.Count < MaximumEvents)
+                using var reader = new EventLogReader(query);
+                while (events.Count < MaximumEvents)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    using var record = reader.ReadEvent();
+                    if (record is null)
+                        break;
+
+                    if (record.TimeCreated is { } time && time < since)
+                        break;
+
+                    string message;
+                    try
+                    {
+                        message = record.FormatDescription() ?? "No event description was provided.";
+                    }
+                    catch (Exception ex) when (ex is EventLogException or Win32Exception or
+                                               FileNotFoundException or DirectoryNotFoundException)
+                    {
+                        // Event providers can have missing message DLLs even when the log entry is valid.
+                        message = $"Event description is unavailable ({ex.Message}).";
+                    }
+
+                    events.Add(new CrashEvent(
+                        record.TimeCreated,
+                        log,
+                        record.Id,
+                        record.ProviderName ?? "Unknown",
+                        Categorize(log, record.Id),
+                        record.LevelDisplayName ?? "Unknown",
+                        message,
+                        record.RecordId));
+                }
+            }
+            catch (Exception ex) when (ex is EventLogException or Win32Exception or
+                                       FileNotFoundException or DirectoryNotFoundException)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                using var record = reader.ReadEvent();
-                if (record is null)
-                    break;
-
-                if (record.TimeCreated is { } time && time < since)
-                    break;
-
-                string message;
-                try
-                {
-                    message = record.FormatDescription() ?? string.Empty;
-                }
-                catch (EventLogException)
-                {
-                    message = "Event description is unavailable.";
-                }
-
-                events.Add(new CrashEvent(
-                    record.TimeCreated,
-                    log,
-                    record.Id,
-                    record.ProviderName ?? "Unknown",
-                    Categorize(log, record.Id),
-                    record.LevelDisplayName ?? "Unknown",
-                    message,
-                    record.RecordId));
+                warnings.Add($"Unable to read the {log} log: {ex.Message}");
             }
         }
 
-        return events
-            .OrderByDescending(e => e.TimeCreated)
-            .Take(MaximumEvents)
-            .ToArray();
+        return new CrashEventReadResult(
+            events.OrderByDescending(e => e.TimeCreated).Take(MaximumEvents).ToArray(),
+            warnings);
     }
 
     private static string Categorize(string log, int id) => (log, id) switch
