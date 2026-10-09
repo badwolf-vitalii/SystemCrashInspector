@@ -26,7 +26,7 @@
             <!-- Side navigation and brand -->
             <Border Grid.Column="0" Background="{StaticResource SidebarBrush}"
                     BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,1,0">
-                <DockPanel Margin="14,20,14,16" LastChildFill="True">
+                <DockPanel Margin="14,20,14,16" LastChildFill="False">
                     <StackPanel DockPanel.Dock="Top">
                         <StackPanel Orientation="Horizontal" Margin="8,3,0,30">
                             <Border Width="42" Height="42" CornerRadius="12" Background="{StaticResource AccentDimBrush}"

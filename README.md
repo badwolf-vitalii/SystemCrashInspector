@@ -59,6 +59,16 @@ dotnet run --project src/SystemCrashInspector/SystemCrashInspector.csproj
 
 The project references **WPF-UI 4.3.0** (Fluent controls and theme resources) and `System.Diagnostics.EventLog`.
 
+### Validation
+
+The Windows GitHub Actions workflow builds the entire solution and runs a small STA smoke test. It verifies WPF resource initialization and checks that the sample `VIDEO_TDR_FAILURE (0x116)` incident remains separate from a subsequent unrelated application crash:
+
+```powershell
+dotnet run --project src/SystemCrashInspector.SmokeTests/SystemCrashInspector.SmokeTests.csproj --configuration Release
+```
+
+The smoke test does not replace an interactive visual layout check on Windows.
+
 ## Privacy
 
 The application reads local event logs and checks local crash dump paths. It does not transmit diagnostic information to external services. CSV exports and copied reports may include user names, file paths, device identifiers, and other sensitive event content.
