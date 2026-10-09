@@ -7,7 +7,7 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 - WPF interface targeting .NET 8 on Windows
 - Reads relevant events from **System** and **Application** event logs
 - Shows the event timestamp, ID, source, category, severity, and full description
-- Filters to the last 7, 30, or 90 days
+- Filters to the last 1, 12, or 24 hours, or 7, 30, or 90 days
 - Exports the currently loaded events to CSV
 - Loads event data without blocking the UI
 

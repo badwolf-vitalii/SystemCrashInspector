@@ -8,10 +8,13 @@
             <TextBlock Text="System Crash Inspector" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,10"/>
             <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
                 <TextBlock Text="Period:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="PeriodPicker" Width="150" SelectedIndex="1" Margin="0,0,12,0">
-                    <ComboBoxItem Content="Last 7 days" Tag="7"/>
-                    <ComboBoxItem Content="Last 30 days" Tag="30"/>
-                    <ComboBoxItem Content="Last 90 days" Tag="90"/>
+                <ComboBox x:Name="PeriodPicker" Width="150" SelectedIndex="4" Margin="0,0,12,0">
+                    <ComboBoxItem Content="Last 1 hour" Tag="1"/>
+                    <ComboBoxItem Content="Last 12 hours" Tag="12"/>
+                    <ComboBoxItem Content="Last 24 hours" Tag="24"/>
+                    <ComboBoxItem Content="Last 7 days" Tag="168"/>
+                    <ComboBoxItem Content="Last 30 days" Tag="720"/>
+                    <ComboBoxItem Content="Last 90 days" Tag="2160"/>
                 </ComboBox>
                 <Button x:Name="RefreshButton" Content="Refresh" Width="100" Padding="7" Click="Refresh_Click" Margin="0,0,8,0"/>
                 <Button x:Name="ExportButton" Content="Export CSV" Width="110" Padding="7" Click="Export_Click"/>

@@ -36,9 +36,9 @@ public partial class MainWindow : Window
 
         try
         {
-            var days = int.Parse(((ComboBoxItem)PeriodPicker.SelectedItem).Tag.ToString()!,
+            var hours = int.Parse(((ComboBoxItem)PeriodPicker.SelectedItem).Tag.ToString()!,
                 CultureInfo.InvariantCulture);
-            var since = DateTime.Now.AddDays(-days);
+            var since = DateTime.Now.AddHours(-hours);
             var result = await Task.Run(() => _reader.Read(since, cancellation.Token), cancellation.Token);
             if (cancellation.IsCancellationRequested)
                 return;
