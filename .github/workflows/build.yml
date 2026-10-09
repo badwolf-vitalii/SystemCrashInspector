@@ -17,3 +17,5 @@ jobs:
         run: dotnet restore src/SystemCrashInspector.sln
       - name: Build
         run: dotnet build src/SystemCrashInspector.sln --configuration Release --no-restore
+      - name: WPF startup and incident presentation smoke tests
+        run: dotnet run --project src/SystemCrashInspector.SmokeTests/SystemCrashInspector.SmokeTests.csproj --configuration Release --no-build
