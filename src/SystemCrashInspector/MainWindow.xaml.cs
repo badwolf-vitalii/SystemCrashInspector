@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -249,24 +248,7 @@ public partial class MainWindow : FluentWindow
 
         try
         {
-            var csv = new StringBuilder("TimeCreated,LogName,EventId,Source,Category,Level,RecordId,Message\r\n");
-            foreach (var item in _events)
-            {
-                var values = new[]
-                {
-                    item.TimeCreated?.ToString("O", CultureInfo.InvariantCulture) ?? "",
-                    item.LogName,
-                    item.EventId.ToString(CultureInfo.InvariantCulture),
-                    item.Source,
-                    item.Category,
-                    item.Level,
-                    item.RecordId?.ToString(CultureInfo.InvariantCulture) ?? "",
-                    item.Message
-                };
-                csv.AppendLine(string.Join(",", values.Select(EscapeCsv)));
-            }
-
-            File.WriteAllText(dialog.FileName, csv.ToString(), new UTF8Encoding(true));
+            ExcelCsvExporter.WriteFile(dialog.FileName, _events);
             StatusText.Text = $"Exported {_events.Count} events.";
         }
         catch (Exception ex)
@@ -276,6 +258,4 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private static string EscapeCsv(string value) =>
-        "\"" + value.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
 }

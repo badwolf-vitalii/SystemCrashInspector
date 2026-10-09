@@ -13,10 +13,17 @@ The application uses **WPF UI (Fluent design)** and a custom, dark diagnostic da
 - File Explorer shortcut for located system dump files
 - Event log with provider/ID/message search and a dedicated detail/Raw XML pane
 - Period selector: 1 hour (default), 12 hours, 24 hours, 7 days, 30 days, or 90 days
-- CSV export of the loaded events and copyable incident reports
+- Excel-friendly CSV export of the loaded events (automatic comma-separated columns on direct open) and copyable incident reports
 - Fixed-height table rows and virtualized scrolling for long event lists
 
 The dark colors, typography, spacing, and diagnostic cards live in `src/SystemCrashInspector/Themes/DashboardTheme.xaml`.
+
+### Opening exported CSV in Excel
+
+The CSV export starts with an Excel-specific `sep=,` directive and is encoded as UTF-8 with a BOM. Double-clicking the `.csv` file in Excel should automatically split it into the eight intended columns, including on systems whose regional list separator is `;`. Embedded newlines in Windows event messages are converted to spaces so each event takes one physical spreadsheet row. Commas, quotes, and Unicode text remain escaped/preserved correctly.
+
+**Compatibility note:** The `sep=,` directive is not part of standard RFC-style CSV; generic CSV readers may need to skip its first line. The original multiline event description remains available in the app's event details.
+
 
 ## Diagnostics
 
