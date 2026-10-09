@@ -16,10 +16,10 @@ namespace SystemCrashInspector;
 
 public partial class MainWindow : FluentWindow
 {
-    private readonly ObservableCollection<CrashEvent> _events = [];
+    private IReadOnlyList<CrashEvent> _events = [];
     private readonly ObservableCollection<CrashIncident> _incidents = [];
     private readonly CrashEventReader _reader = new();
-    private readonly ICollectionView _eventView;
+    private ICollectionView _eventView;
     private CancellationTokenSource? _refreshCancellation;
     private IReadOnlyList<CrashEvent> _contextEvents = [];
 
@@ -75,35 +75,7 @@ public partial class MainWindow : FluentWindow
             if (!ReferenceEquals(_refreshCancellation, cancellation))
                 return;
 
-            var previouslySelected = IncidentsList.SelectedItem as CrashIncident;
-
-            _contextEvents = result.Events;
-            _incidents.Clear();
-            foreach (var incident in incidents)
-                _incidents.Add(incident);
-
-            using (_eventView.DeferRefresh())
-            {
-                _events.Clear();
-                foreach (var item in result.Events)
-                    _events.Add(item);
-            }
-
-            IncidentsCountText.Text = incidents.Count.ToString(CultureInfo.InvariantCulture);
-            RestartsCountText.Text = incidents.Count(x => x.IsSystemRestart)
-                .ToString(CultureInfo.InvariantCulture);
-            EventsCountText.Text = result.Events.Count.ToString(CultureInfo.InvariantCulture);
-            IncidentListCountText.Text = incidents.Count.ToString(CultureInfo.InvariantCulture);
-            NoIncidentsText.Visibility = incidents.Count == 0
-                ? Visibility.Visible : Visibility.Collapsed;
-
-            IncidentsList.SelectedItem = incidents.FirstOrDefault(x =>
-                previouslySelected is not null &&
-                x.Time == previouslySelected.Time && x.Type == previouslySelected.Type)
-                ?? incidents.FirstOrDefault();
-
-            if (incidents.Count == 0)
-                SetSelectedIncident(null);
+            ApplyScanResults(result, incidents);
 
             StatusText.Text = $"Scanned {result.Events.Count} events • {incidents.Count} incidents" +
                               (result.Warnings.Count == 0 ? " • Completed" :
@@ -130,6 +102,43 @@ public partial class MainWindow : FluentWindow
                 _refreshCancellation = null;
             }
         }
+    }
+
+    // Switch the event table to a newly constructed snapshot, not a deferred refresh of the
+    // currently bound collection. WPF DataGrid may query its CollectionView during item changes.
+    // Mutating that view under DeferRefresh throws InvalidOperationException at runtime.
+    internal void ApplyScanResults(CrashEventReadResult result, IReadOnlyList<CrashIncident> incidents)
+    {
+        var loadedEvents = result.Events.ToArray();
+        var replacementView = CollectionViewSource.GetDefaultView(loadedEvents);
+        replacementView.Filter = MatchesSearch;
+
+        var previouslySelected = IncidentsList.SelectedItem as CrashIncident;
+
+        _contextEvents = loadedEvents;
+        _events = loadedEvents;
+        _eventView = replacementView;
+        EventsGrid.ItemsSource = replacementView;
+
+        _incidents.Clear();
+        foreach (var incident in incidents)
+            _incidents.Add(incident);
+
+        IncidentsCountText.Text = incidents.Count.ToString(CultureInfo.InvariantCulture);
+        RestartsCountText.Text = incidents.Count(x => x.IsSystemRestart)
+            .ToString(CultureInfo.InvariantCulture);
+        EventsCountText.Text = loadedEvents.Length.ToString(CultureInfo.InvariantCulture);
+        IncidentListCountText.Text = incidents.Count.ToString(CultureInfo.InvariantCulture);
+        NoIncidentsText.Visibility = incidents.Count == 0
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        IncidentsList.SelectedItem = incidents.FirstOrDefault(x =>
+            previouslySelected is not null &&
+            x.Time == previouslySelected.Time && x.Type == previouslySelected.Type)
+            ?? incidents.FirstOrDefault();
+
+        if (incidents.Count == 0)
+            SetSelectedIncident(null);
     }
 
     private void IncidentsList_SelectionChanged(object sender, SelectionChangedEventArgs e)

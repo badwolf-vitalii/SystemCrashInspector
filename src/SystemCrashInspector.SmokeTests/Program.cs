@@ -20,10 +20,10 @@ internal static class Program
             Check(window.FindName("IncidentTabs") is not null, "Diagnostic tabs are missing.");
             Check(window.FindName("EventsGrid") is not null, "Raw event grid is missing.");
             Check(window.FindName("PeriodPicker") is not null, "Period selector is missing.");
+            TestIncidentPresentation(window);
             window.Close();
 
-            TestIncidentPresentation();
-            Console.WriteLine("WPF initialization and incident presentation smoke tests passed.");
+            Console.WriteLine("WPF startup, event-table refresh, and incident presentation smoke tests passed.");
             return 0;
         }
         catch (Exception ex)
@@ -33,7 +33,7 @@ internal static class Program
         }
     }
 
-    private static void TestIncidentPresentation()
+    private static void TestIncidentPresentation(global::SystemCrashInspector.MainWindow window)
     {
         var restartTime = new DateTime(2026, 10, 9, 19, 39, 32);
         var events = new CrashEvent[]
@@ -65,6 +65,41 @@ internal static class Program
         Check(appCrash.DisplayTitle == "ServiceHub.DataWarehouseHost.exe",
             "Application crash label must identify the process.");
         Check(appCrash.EvidenceCount == 1, "Application incident must retain its evidence.");
+
+        TestEventTableRefresh(window, events, incidents);
+    }
+
+    private static void TestEventTableRefresh(
+        global::SystemCrashInspector.MainWindow window,
+        IReadOnlyList<CrashEvent> events,
+        IReadOnlyList<CrashIncident> incidents)
+    {
+        // Mimic the actual post-scan UI path, including repeated refreshes and a live search.
+        // The prior ObservableCollection + DeferRefresh implementation failed here while
+        // WPF's DataGrid accessed its bound CollectionView.
+        var result = new CrashEventReadResult(events, []);
+        window.ApplyScanResults(result, incidents);
+        Check(window.EventsGrid.Items.Count == events.Count, "The event table did not load all rows.");
+        Check(window.IncidentsCountText.Text == "2", "Incident count is incorrect.");
+        Check(window.EventsCountText.Text == "4", "Event count is incorrect.");
+        Check(window.IncidentsList.SelectedItem is CrashIncident, "No incident was selected.");
+
+        window.EventSearchBox.Text = "ServiceHub";
+        Check(window.EventsGrid.Items.Count == 1, "Event search must filter the visible rows.");
+
+        window.ApplyScanResults(result, incidents);
+        Check(window.EventsGrid.Items.Count == 1,
+            "A new scan must retain the current search without a deferred-refresh error.");
+
+        window.EventSearchBox.Text = "";
+        Check(window.EventsGrid.Items.Count == events.Count,
+            "Clearing the search must restore all loaded events.");
+
+        window.ApplyScanResults(new CrashEventReadResult([], []), []);
+        Check(window.EventsGrid.Items.Count == 0, "The event table was not cleared.");
+        Check(window.IncidentsCountText.Text == "0", "The incident count was not cleared.");
+        Check(window.EventsCountText.Text == "0", "The event count was not cleared.");
+        Check(window.IncidentsList.SelectedItem is null, "The incident selection was not cleared.");
     }
 
     private static void Check(bool condition, string message)
