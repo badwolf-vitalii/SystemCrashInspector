@@ -35,12 +35,12 @@ Events provide evidence to investigate; **they do not establish the root cause b
 ## Build
 
 ```powershell
-dotnet restore SystemCrashInspector/SystemCrashInspector.csproj
-dotnet build SystemCrashInspector/SystemCrashInspector.csproj -c Release
-dotnet run --project SystemCrashInspector/SystemCrashInspector.csproj
+dotnet restore src/SystemCrashInspector/SystemCrashInspector.csproj
+dotnet build src/SystemCrashInspector/SystemCrashInspector.csproj -c Release
+dotnet run --project src/SystemCrashInspector/SystemCrashInspector.csproj
 ```
 
-Open the project in Visual Studio 2022 with the .NET desktop development workload.
+Open `src/SystemCrashInspector.sln` in Visual Studio 2022 with the .NET desktop development workload.
 
 ## Privacy
 

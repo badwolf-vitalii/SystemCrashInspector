@@ -14,6 +14,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Restore
-        run: dotnet restore SystemCrashInspector/SystemCrashInspector.csproj
+        run: dotnet restore src/SystemCrashInspector.sln
       - name: Build
-        run: dotnet build SystemCrashInspector/SystemCrashInspector.csproj --configuration Release --no-restore
+        run: dotnet build src/SystemCrashInspector.sln --configuration Release --no-restore
