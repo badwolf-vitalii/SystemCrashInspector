@@ -7,6 +7,7 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 - WPF interface targeting .NET 8 on Windows
 - Reads relevant events from **System** and **Application** event logs
 - Shows the event timestamp, ID, source, category, severity, and full description
+- Provides event-specific diagnostic explanations, raw event XML, and a +/- 2 minute timeline of other collected events
 - Filters to the last 1, 12, or 24 hours, or 7, 30, or 90 days
 - Exports the currently loaded events to CSV
 - Loads event data without blocking the UI
@@ -48,4 +49,4 @@ Events are read locally. Nothing is transmitted to external services. CSV export
 
 ## Scope
 
-This first iteration is an event-log inspector, not a minidump analyzer. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.
+This stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. It is not a minidump analyzer. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.

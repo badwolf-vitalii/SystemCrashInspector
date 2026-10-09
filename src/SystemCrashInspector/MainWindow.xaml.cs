@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<CrashEvent> _events = [];
     private readonly CrashEventReader _reader = new();
     private CancellationTokenSource? _refreshCancellation;
+    private IReadOnlyList<CrashEvent> _contextEvents = [];
 
     public MainWindow()
     {
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
             if (cancellation.IsCancellationRequested)
                 return;
 
+            _contextEvents = result.Events;
             _events.Clear();
             foreach (var item in result.Events)
                 _events.Add(item);
@@ -75,9 +77,7 @@ public partial class MainWindow : Window
     private void EventsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         DetailsText.Text = EventsGrid.SelectedItem is CrashEvent item
-            ? $"Date: {item.TimeCreated:yyyy-MM-dd HH:mm:ss}\nLog: {item.LogName}\n" +
-              $"Event ID: {item.EventId}\nSource: {item.Source}\nLevel: {item.Level}\n" +
-              $"Record ID: {item.RecordId}\nCategory: {item.Category}\n\n{item.Message}"
+            ? IncidentExplainer.Explain(item, _contextEvents)
             : string.Empty;
     }
 

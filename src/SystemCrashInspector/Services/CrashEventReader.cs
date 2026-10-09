@@ -66,7 +66,8 @@ public sealed class CrashEventReader
                         Categorize(log, record.Id),
                         record.LevelDisplayName ?? "Unknown",
                         message,
-                        record.RecordId));
+                        record.RecordId,
+                        SafeXml(record)));
                 }
             }
             catch (Exception ex) when (ex is EventLogException or Win32Exception or
@@ -79,6 +80,18 @@ public sealed class CrashEventReader
         return new CrashEventReadResult(
             events.OrderByDescending(e => e.TimeCreated).Take(MaximumEvents).ToArray(),
             warnings);
+    }
+
+    private static string SafeXml(EventRecord record)
+    {
+        try
+        {
+            return record.ToXml();
+        }
+        catch (EventLogException ex)
+        {
+            return $"Event XML could not be retrieved: {ex.Message}";
+        }
     }
 
     private static string Categorize(string log, int id) => (log, id) switch

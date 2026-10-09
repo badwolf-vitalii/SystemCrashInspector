@@ -8,4 +8,5 @@ public sealed record CrashEvent(
     string Category,
     string Level,
     string Message,
-    long? RecordId);
+    long? RecordId,
+    string RawXml);
