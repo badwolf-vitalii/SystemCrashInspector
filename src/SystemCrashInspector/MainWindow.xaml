@@ -1,0 +1,78 @@
+<Window x:Class="SystemCrashInspector.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="System Crash Inspector" Height="740" Width="1150"
+        MinHeight="500" MinWidth="800" WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="System Crash Inspector" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,10"/>
+            <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
+                <TextBlock Text="Period:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="PeriodPicker" Width="150" SelectedIndex="0" Margin="0,0,12,0">
+                    <ComboBoxItem Content="Last 1 hour" Tag="1"/>
+                    <ComboBoxItem Content="Last 12 hours" Tag="12"/>
+                    <ComboBoxItem Content="Last 24 hours" Tag="24"/>
+                    <ComboBoxItem Content="Last 7 days" Tag="168"/>
+                    <ComboBoxItem Content="Last 30 days" Tag="720"/>
+                    <ComboBoxItem Content="Last 90 days" Tag="2160"/>
+                </ComboBox>
+                <Button x:Name="RefreshButton" Content="Refresh" Width="100" Padding="7" Click="Refresh_Click" Margin="0,0,8,0"/>
+                <Button x:Name="ExportButton" Content="Export CSV" Width="110" Padding="7" Click="Export_Click"/>
+            </WrapPanel>
+        </StackPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <TextBlock x:Name="StatusText" Text="Ready"/>
+        </StatusBar>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="2*"/>
+            </Grid.RowDefinitions>
+            <TabControl Grid.Row="0">
+                <TabItem Header="Incidents">
+                    <DataGrid x:Name="IncidentsGrid" IsReadOnly="True" AutoGenerateColumns="False"
+                              SelectionMode="Single" SelectionChanged="IncidentsGrid_SelectionChanged"
+                              RowHeight="32" EnableRowVirtualization="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" Width="170"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="190"/>
+                            <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="110"/>
+                            <DataGridTextColumn Header="Summary" Binding="{Binding Summary}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+                <TabItem Header="Raw events">
+                    <DataGrid x:Name="EventsGrid" AutoGenerateColumns="False"
+                      IsReadOnly="True" SelectionMode="Single"
+                      SelectionChanged="EventsGrid_SelectionChanged"
+                      EnableRowVirtualization="True" CanUserAddRows="False"
+                      RowHeight="28" ScrollViewer.CanContentScroll="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date / time" Binding="{Binding TimeCreated, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" Width="170"/>
+                    <DataGridTextColumn Header="Log" Binding="{Binding LogName}" Width="100"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding EventId}" Width="65"/>
+                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="220"/>
+                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="180"/>
+                    <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="110"/>
+                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping" Value="NoWrap"/>
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+            <GridSplitter Grid.Row="1" Height="8" HorizontalAlignment="Stretch" ResizeDirection="Rows" Background="#DDDDDD"/>
+            <GroupBox Header="Incident analysis / event details" Grid.Row="2" Margin="0,4,0,0">
+                <TextBox x:Name="DetailsText" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         IsReadOnly="True" BorderThickness="0" Padding="10"/>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
