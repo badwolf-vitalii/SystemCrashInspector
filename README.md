@@ -4,6 +4,9 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 
 ## Features
 
+- **Incidents tab (default):** groups unclean restarts and BugCheck reports, links nearby Windows dump files, and separates unrelated application crashes
+- **Raw events tab:** retains the original event viewer with XML and per-event explanations
+
 - WPF interface targeting .NET 8 on Windows
 - Reads relevant events from **System** and **Application** event logs
 - Shows the event timestamp, ID, source, category, severity, and full description
@@ -51,4 +54,4 @@ Events are read locally. Nothing is transmitted to external services. CSV export
 
 ## Scope
 
-This stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. Dump metadata is listed, but dump contents are not analyzed. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.
+Incident correlation uses time proximity and provider names, not proof of causation. Windows dump files are listed by metadata only, not symbolically analyzed.\n\nThis stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. Dump metadata is listed, but dump contents are not analyzed. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.

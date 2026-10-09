@@ -13,6 +13,7 @@ namespace SystemCrashInspector;
 public partial class MainWindow : Window
 {
     private readonly ObservableCollection<CrashEvent> _events = [];
+    private readonly ObservableCollection<CrashIncident> _incidents = [];
     private readonly CrashEventReader _reader = new();
     private CancellationTokenSource? _refreshCancellation;
     private IReadOnlyList<CrashEvent> _contextEvents = [];
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         EventsGrid.ItemsSource = _events;
+        IncidentsGrid.ItemsSource = _incidents;
         Loaded += async (_, _) => await RefreshAsync();
         Closed += (_, _) => _refreshCancellation?.Cancel();
     }
@@ -44,12 +46,18 @@ public partial class MainWindow : Window
             if (cancellation.IsCancellationRequested)
                 return;
 
+            var incidents = await Task.Run(() => IncidentAnalyzer.Analyze(result.Events, cancellation.Token), cancellation.Token);
+            if (cancellation.IsCancellationRequested)
+                return;
+            _incidents.Clear();
+            foreach (var incident in incidents)
+                _incidents.Add(incident);
             _contextEvents = result.Events;
             _events.Clear();
             foreach (var item in result.Events)
                 _events.Add(item);
 
-            StatusText.Text = $"Loaded {result.Events.Count} events." +
+            StatusText.Text = $"Found {_incidents.Count} incidents and {result.Events.Count} events." +
                 (result.Warnings.Count > 0 ? $" Warnings: {string.Join(" | ", result.Warnings)}" :
                 " Event IDs are indicators, not proof of root cause.");
         }
@@ -72,6 +80,12 @@ public partial class MainWindow : Window
             }
             cancellation.Dispose();
         }
+    }
+
+    private void IncidentsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IncidentsGrid.SelectedItem is CrashIncident incident)
+            DetailsText.Text = incident.Details;
     }
 
     private void EventsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
