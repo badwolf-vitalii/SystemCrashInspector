@@ -7,7 +7,9 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 - WPF interface targeting .NET 8 on Windows
 - Reads relevant events from **System** and **Application** event logs
 - Shows the event timestamp, ID, source, category, severity, and full description
-- Provides event-specific diagnostic explanations, raw event XML, and a +/- 2 minute timeline of other collected events
+- Provides event-specific diagnostic explanations, raw event XML, and a +/- 5 minute timeline of other collected events
+- Looks for nearby Windows minidumps, MEMORY.DMP, and per-user crash dumps (file metadata only)
+- Includes selected WHEA, graphics-driver, storage, and .NET exception indicators
 - Filters to the last 1, 12, or 24 hours, or 7, 30, or 90 days
 - Exports the currently loaded events to CSV
 - Loads event data without blocking the UI
@@ -16,7 +18,7 @@ A Windows desktop app for investigating crashes, application hangs, and unexpect
 
 | Log | Event IDs | Meaning |
 | --- | --- | --- |
-| System | 41 | Kernel-Power: system restarted without a clean shutdown |
+| System | 4101 | Display driver timeout / recovery (provider-dependent) |\n| System | 17-20 | Hardware errors (only when emitted by WHEA providers) |\n| System | 7, 11, 15, 51, 55, 129, 153, 157 | Potential storage errors (source-dependent) |\n| Application | 1026 | .NET exception reporting (source-dependent) |\n| System | 41 | Kernel-Power: system restarted without a clean shutdown |
 | System | 6008 | Unexpected shutdown |
 | System | 1001 | Bug check |
 | System | 1074 | Planned restart/shutdown |
@@ -49,4 +51,4 @@ Events are read locally. Nothing is transmitted to external services. CSV export
 
 ## Scope
 
-This stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. It is not a minidump analyzer. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.
+This stage provides evidence-based interpretations and local event correlation, not a confirmed diagnosis. Dump metadata is listed, but dump contents are not analyzed. Dump-file parsing, WER report correlations, more sophisticated filtering, and root-cause grouping are potential next steps.

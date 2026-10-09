@@ -13,8 +13,8 @@ public sealed class CrashEventReader
 
     private static readonly (string Log, int[] Ids)[] Sources =
     [
-        ("System", [41, 1001, 1074, 6005, 6006, 6008]),
-        ("Application", [1000, 1001, 1002])
+        ("System", [1, 7, 11, 14, 15, 17, 18, 19, 20, 41, 51, 55, 100, 129, 153, 157, 219, 4101, 1001, 1074, 6005, 6006, 6008]),
+        ("Application", [1000, 1001, 1002, 1026])
     ];
 
     public CrashEventReadResult Read(DateTime since, CancellationToken cancellationToken)
@@ -96,12 +96,16 @@ public sealed class CrashEventReader
 
     private static string Categorize(string log, int id) => (log, id) switch
     {
+        ("System", 4101) => "Display driver recovery",
+        ("System", 17 or 18 or 19 or 20) => "Possible hardware error (verify WHEA provider)",
+        ("System", 7 or 11 or 15 or 51 or 55 or 129 or 153 or 157) => "Possible storage error (verify source)",
         ("System", 41) => "Unexpected power loss or restart",
         ("System", 6008) => "Unexpected shutdown",
         ("System", 1001) => "Bug check",
         ("System", 1074) => "Planned shutdown or restart",
         ("System", 6005) => "Event Log service started",
         ("System", 6006) => "Event Log service stopped",
+        ("Application", 1026) => ".NET Runtime exception (verify source)",
         ("Application", 1000) => "Application crash",
         ("Application", 1001) => "Windows Error Reporting",
         ("Application", 1002) => "Application hang",

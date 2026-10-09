@@ -20,13 +20,13 @@ public static class IncidentExplainer
         sb.AppendLine($"Log: {selected.LogName}; ID: {selected.EventId}; Provider: {selected.Source}");
         sb.AppendLine($"Level: {selected.Level}; Record ID: {selected.RecordId}");
         sb.AppendLine();
-        sb.AppendLine("RELATED EVENTS (+/- 2 minutes)");
+        sb.AppendLine("RELATED EVENTS (+/- 5 minutes; collected event IDs only)");
         if (selected.TimeCreated is { } timestamp)
         {
             var related = events.Where(e => !ReferenceEquals(e, selected) &&
                                            e.TimeCreated is { } t &&
-                                           Math.Abs((t - timestamp).TotalMinutes) <= 2)
-                .OrderBy(e => e.TimeCreated).Take(30).ToArray();
+                                           Math.Abs((t - timestamp).TotalMinutes) <= 5)
+                .OrderBy(e => e.TimeCreated).Take(100).ToArray();
             if (related.Length == 0)
                 sb.AppendLine("No other collected events in this time window.");
             foreach (var e in related)
@@ -38,6 +38,9 @@ public static class IncidentExplainer
         }
 
         sb.AppendLine();
+        sb.AppendLine("LOCAL WINDOWS CRASH DUMPS");
+        AppendDumps(sb, selected.TimeCreated);
+        sb.AppendLine();
         sb.AppendLine("EVENT DESCRIPTION");
         sb.AppendLine(selected.Message);
         sb.AppendLine();
@@ -46,8 +49,54 @@ public static class IncidentExplainer
         return sb.ToString();
     }
 
+    private static void AppendDumps(StringBuilder sb, DateTime? time)
+    {
+        var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        var locations = new[]
+        {
+            Path.Combine(windows, "Minidump"),
+            Path.Combine(windows, "MEMORY.DMP"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CrashDumps")
+        };
+        var found = 0;
+        foreach (var location in locations)
+        {
+            try
+            {
+                var files = File.Exists(location) ? new[] { location } :
+                    Directory.Exists(location) ?
+                        Directory.EnumerateFiles(location, "*.dmp").Take(200) :
+                        Enumerable.Empty<string>();
+                foreach (var file in files)
+                {
+                    var info = new FileInfo(file);
+                    if (time is { } t && Math.Abs((info.LastWriteTime - t).TotalHours) > 24)
+                        continue;
+                    sb.AppendLine($"{info.LastWriteTime:yyyy-MM-dd HH:mm:ss} | {info.Length:N0} bytes | {info.FullName}");
+                    found++;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                sb.AppendLine($"Cannot inspect {location}: {ex.Message}");
+            }
+        }
+        if (found == 0)
+            sb.AppendLine("No nearby local crash dump files found in the checked locations. This does not rule out a BSOD.");
+        sb.AppendLine("Dump contents are not analyzed. Use WinDbg for stack traces and bugcheck parameters.");
+    }
+
     private static string Interpret(CrashEvent e)
     {
+        if (e.Source.Contains("WHEA", StringComparison.OrdinalIgnoreCase))
+            return "Windows Hardware Error Architecture reported a hardware-related event. Check the full XML and whether it was corrected or fatal; investigate CPU, RAM, PCIe, GPU, and firmware.";
+        if (e.Source.Contains("Display", StringComparison.OrdinalIgnoreCase) && e.EventId == 4101)
+            return "Windows reported a graphics driver timeout and recovery (TDR). Check GPU temperatures, driver version, power stability, and other events around this time.";
+        if (e.Source.Contains("disk", StringComparison.OrdinalIgnoreCase) ||
+            e.Source.Contains("stor", StringComparison.OrdinalIgnoreCase) ||
+            e.Source.Contains("nvme", StringComparison.OrdinalIgnoreCase))
+            return "Possible storage or controller problem. Check drive health and related disk/controller events before concluding this caused the restart.";
         if (e.LogName == "System" && e.EventId == 41)
             return "Kernel-Power 41 records an unclean restart. It does not prove a power-supply fault. " +
                    "Check BugCheck 1001, dump files, hardware/WHEA errors, and events preceding the reboot.";
