@@ -6,6 +6,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Threading;
 using SystemCrashInspector.Models;
 using SystemCrashInspector.Services;
 using Microsoft.Win32;
@@ -15,6 +16,9 @@ namespace SystemCrashInspector;
 
 public partial class MainWindow : FluentWindow
 {
+    private readonly HardwareMonitorService _hardwareMonitor = new();
+    private readonly DispatcherTimer _hardwareTimer = new() { Interval = TimeSpan.FromSeconds(2) };
+    private bool _hardwareRefreshing;
     private IReadOnlyList<CrashEvent> _events = [];
     private readonly ObservableCollection<CrashIncident> _incidents = [];
     private readonly CrashEventReader _reader = new();
@@ -30,8 +34,14 @@ public partial class MainWindow : FluentWindow
         EventsGrid.ItemsSource = _eventView;
         IncidentsList.ItemsSource = _incidents;
 
+        _hardwareTimer.Tick += async (_, _) => await RefreshHardwareAsync();
         Loaded += async (_, _) => await RefreshAsync();
-        Closed += (_, _) => _refreshCancellation?.Cancel();
+        Closed += (_, _) =>
+        {
+            _refreshCancellation?.Cancel();
+            _hardwareTimer.Stop();
+            _hardwareMonitor.Dispose();
+        };
     }
 
     private void Navigation_Checked(object sender, RoutedEventArgs e)
@@ -44,6 +54,46 @@ public partial class MainWindow : FluentWindow
             ? Visibility.Visible : Visibility.Collapsed;
         EventsPage.Visibility = EventsNav.IsChecked == true
             ? Visibility.Visible : Visibility.Collapsed;
+        HardwarePage.Visibility = HardwareNav.IsChecked == true
+            ? Visibility.Visible : Visibility.Collapsed;
+        if (HardwareNav.IsChecked == true)
+        {
+            _hardwareTimer.Start();
+            _ = RefreshHardwareAsync();
+        }
+        else
+        {
+            _hardwareTimer.Stop();
+        }
+    }
+
+    private async void RefreshHardware_Click(object sender, RoutedEventArgs e) => await RefreshHardwareAsync();
+
+    private async Task RefreshHardwareAsync()
+    {
+        if (_hardwareRefreshing || HardwareNav.IsChecked != true)
+            return;
+
+        _hardwareRefreshing = true;
+        try
+        {
+            var readings = await Task.Run(_hardwareMonitor.Read);
+            if (HardwareNav.IsChecked != true || !IsLoaded)
+                return;
+
+            HardwareGrid.ItemsSource = readings;
+            HardwareStatusText.Text = readings.Count == 0
+                ? "No accessible hardware sensors found. Some sensors require administrator privileges."
+                : $"{readings.Count} sensors • Updated {DateTime.Now:HH:mm:ss} • Live readings only";
+        }
+        catch (Exception ex)
+        {
+            HardwareStatusText.Text = $"Unable to read hardware sensors: {ex.Message}";
+        }
+        finally
+        {
+            _hardwareRefreshing = false;
+        }
     }
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
