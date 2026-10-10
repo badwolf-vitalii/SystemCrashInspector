@@ -85,3 +85,9 @@ The application reads local event logs and checks local crash dump paths. It doe
 - Automatic WinDbg-based dump and driver analysis is **not** implemented.
 - WER report ingestion and advanced hardware data collection are **not** implemented.
 - The preview-inspired dashboard presents only diagnostic information the current analyzer can support. It does not claim to identify faulty hardware automatically.
+
+## Hardware monitor
+
+The **Hardware monitor** sidebar page samples available CPU, GPU, memory, storage, motherboard, controller, and network sensors every two seconds while the page is open. It uses `LibreHardwareMonitorLib` and shows temperature, utilization, clocks, power, fan speed, data, throughput, and voltage where the hardware exposes those readings. Unavailable sensors are omitted rather than fabricated.
+
+Sensor access varies by device, driver, and privileges; some readings may require running as administrator. Monitoring is local and read-only. **This first iteration is live-only:** it does not yet record background history or correlate sensor samples with crashes. Closing the app stops collection.

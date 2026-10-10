@@ -60,6 +60,14 @@
                                 <TextBlock Text="Event log" VerticalAlignment="Center"/>
                             </StackPanel>
                         </RadioButton>
+                        <RadioButton x:Name="HardwareNav" GroupName="Pages"
+                                     Style="{StaticResource SidebarLinkStyle}" Checked="Navigation_Checked">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE9CA;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="17" Width="27" VerticalAlignment="Center"/>
+                                <TextBlock Text="Hardware monitor" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
                         <Separator Background="{StaticResource OutlineBrush}" Margin="6,22,6,22"/>
                         <TextBlock Text="DIAGNOSTICS" Style="{StaticResource MicroLabelStyle}" Margin="14,0,0,13"/>
                         <Border Style="{StaticResource SectionCardStyle}" Padding="12" Background="#14263B">
@@ -514,6 +522,48 @@
                             <TextBox x:Name="EventDetailsText" Grid.Row="1"
                                      Style="{StaticResource RawOutputStyle}" />
                         </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid x:Name="HardwarePage" Grid.Row="1" Margin="26,20,26,20" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="16"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <TextBlock Text="Refresh every 2 seconds while this page is open"
+                                       Style="{StaticResource MutedTextStyle}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                            <Button Content="Refresh now" Style="{StaticResource DashboardButtonStyle}"
+                                    Click="RefreshHardware_Click"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Hardware monitor" FontSize="21" FontWeight="SemiBold"
+                                       Style="{StaticResource PrimaryTextStyle}"/>
+                            <TextBlock x:Name="HardwareStatusText" Text="Waiting for sensors..."
+                                       Style="{StaticResource MutedTextStyle}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <Border Grid.Row="2" Style="{StaticResource SectionCardStyle}" Padding="1">
+                        <DataGrid x:Name="HardwareGrid" Style="{StaticResource DiagnosticDataGridStyle}"
+                                  ColumnHeaderStyle="{StaticResource DiagnosticHeaderStyle}"
+                                  CellStyle="{StaticResource DiagnosticCellStyle}"
+                                  RowStyle="{StaticResource DiagnosticRowStyle}"
+                                  IsReadOnly="True" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="DEVICE" Binding="{Binding Device}" Width="2*"
+                                                    ElementStyle="{StaticResource DiagnosticGridTextStyle}"/>
+                                <DataGridTextColumn Header="TYPE" Binding="{Binding Category}" Width="110"
+                                                    ElementStyle="{StaticResource DiagnosticGridTextStyle}"/>
+                                <DataGridTextColumn Header="SENSOR" Binding="{Binding Sensor}" Width="2*"
+                                                    ElementStyle="{StaticResource DiagnosticGridTextStyle}"/>
+                                <DataGridTextColumn Header="VALUE" Binding="{Binding Value}" Width="90"
+                                                    ElementStyle="{StaticResource DiagnosticGridTextStyle}"/>
+                                <DataGridTextColumn Header="UNIT" Binding="{Binding Unit}" Width="80"
+                                                    ElementStyle="{StaticResource DiagnosticGridTextStyle}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Border>
                 </Grid>
 
